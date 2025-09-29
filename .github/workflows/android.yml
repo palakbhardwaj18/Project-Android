@@ -29,9 +29,8 @@ jobs:
         run: |
           curl -L https://dl.google.com/android/repository/commandlinetools-win-9477386_latest.zip -o cmd-tools.zip
           if (!(Test-Path "C:\Android")) { mkdir C:\Android }
-          tar -xf cmd-tools.zip -C C:\Android
           if (!(Test-Path "C:\Android\cmdline-tools\latest")) { mkdir C:\Android\cmdline-tools\latest }
-          move C:\Android\cmdline-tools\* C:\Android\cmdline-tools\latest
+          tar -xf cmd-tools.zip -C C:\Android\cmdline-tools\latest
 
       # ---------------- Set Environment Variables ----------------
       - name: Set ANDROID_HOME and PATH
@@ -68,3 +67,4 @@ jobs:
         run: |
           echo "Cloud Phone is running..."
           ping -t 127.0.0.1 > NUL
+
