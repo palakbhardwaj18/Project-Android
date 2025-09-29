@@ -19,22 +19,36 @@ jobs:
           & "C:\Program Files\Tailscale\tailscale.exe" version
           & "C:\Program Files\Tailscale\tailscale.exe" up --authkey ${{ secrets.TS_KEY }} --hostname github-cloudphone --accept-routes --accept-dns
 
-      - name: Install Chocolatey
-        run: |
-          Set-ExecutionPolicy Bypass -Scope Process -Force
-          [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
-          iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
+      - name: Install Java (needed for Android SDK tools)
+        run: choco install microsoft-openjdk11 -y
 
-      - name: Install Android SDK
+      - name: Download Android Command Line Tools
         run: |
-          choco install android-sdk -y
-          choco install androidstudio -y
+          curl -L https://dl.google.com/android/repository/commandlinetools-win-9477386_latest.zip -o cmd-tools.zip
+          mkdir C:\Android
+          tar -xf cmd-tools.zip -C C:\Android
+          mkdir C:\Android\cmdline-tools\latest
+          move C:\Android\cmdline-tools\* C:\Android\cmdline-tools\latest
 
-      - name: Setup Android 11 Emulator
+      - name: Set ANDROID_HOME and PATH
         run: |
-          echo "y" | & "C:\ProgramData\chocolatey\bin\sdkmanager.bat" --install "system-images;android-30;google_apis;x86_64"
-          echo "no" | & "C:\ProgramData\chocolatey\bin\avdmanager.bat" create avd -n cloudphone -k "system-images;android-30;google_apis;x86_64"
-          & "C:\ProgramData\chocolatey\bin\emulator.exe" -avd cloudphone -no-snapshot -no-window -no-audio &
+          echo "ANDROID_HOME=C:\Android" >> $env:GITHUB_ENV
+          echo "ANDROID_SDK_ROOT=C:\Android" >> $env:GITHUB_ENV
+          echo "C:\Android\cmdline-tools\latest\bin" >> $env:GITHUB_PATH
+          echo "C:\Android\platform-tools" >> $env:GITHUB_PATH
+          echo "C:\Android\emulator" >> $env:GITHUB_PATH
+
+      - name: Install Android 11 system image
+        run: |
+          echo y | sdkmanager --install "platform-tools" "platforms;android-30" "system-images;android-30;google_apis;x86_64" "emulator"
+
+      - name: Create Android 11 AVD
+        run: |
+          echo no | avdmanager create avd -n cloudphone -k "system-images;android-30;google_apis;x86_64" --device "pixel"
+
+      - name: Launch Android Emulator (headless)
+        run: |
+          emulator -avd cloudphone -no-snapshot -no-window -no-audio &
 
       - name: Enable RDP
         run: |
