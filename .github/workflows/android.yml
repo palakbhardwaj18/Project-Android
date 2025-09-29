@@ -1,4 +1,4 @@
-name: Cloud Android Phone (Win11 + Tailscale + Android11)
+name: Cloud Android 11 Phone (Win11 + Tailscale + RDP)
 
 on:
   workflow_dispatch:
@@ -6,7 +6,7 @@ on:
 jobs:
   android-phone:
     runs-on: windows-latest
-    timeout-minutes: 360   # 6 hours max
+    timeout-minutes: 360
 
     steps:
       - name: Checkout Repo
@@ -20,7 +20,7 @@ jobs:
           & "C:\Program Files\Tailscale\tailscale.exe" version
           & "C:\Program Files\Tailscale\tailscale.exe" up --authkey ${{ secrets.TS_KEY }} --hostname github-cloudphone --accept-routes --accept-dns
 
-      # ---------------- Java (required for Android SDK) ----------------
+      # ---------------- Java ----------------
       - name: Install Java
         run: choco install microsoft-openjdk11 -y
 
@@ -32,27 +32,18 @@ jobs:
           if (!(Test-Path "C:\Android\cmdline-tools\latest")) { mkdir C:\Android\cmdline-tools\latest }
           tar -xf cmd-tools.zip -C C:\Android\cmdline-tools\latest
 
-      # ---------------- Set Environment Variables ----------------
-      - name: Set ANDROID_HOME and PATH
+      # ---------------- Install SDK & Emulator ----------------
+      - name: Install Android 11 SDK & system images
         run: |
-          echo "ANDROID_HOME=C:\Android" >> $env:GITHUB_ENV
-          echo "ANDROID_SDK_ROOT=C:\Android" >> $env:GITHUB_ENV
-          echo "C:\Android\cmdline-tools\latest\bin" >> $env:GITHUB_PATH
-          echo "C:\Android\platform-tools" >> $env:GITHUB_PATH
-          echo "C:\Android\emulator" >> $env:GITHUB_PATH
-
-      # ---------------- Install Android 11 SDK & Emulator ----------------
-      - name: Install Android 11 system image & tools
-        run: |
-          echo y | sdkmanager --install "platform-tools" "platforms;android-30" "system-images;android-30;google_apis;x86_64" "emulator"
+          & "C:\Android\cmdline-tools\latest\bin\sdkmanager.bat" --install "platform-tools" "platforms;android-30" "system-images;android-30;google_apis;x86_64" "emulator" --verbose
 
       - name: Create Android 11 AVD
         run: |
-          echo no | avdmanager create avd -n cloudphone -k "system-images;android-30;google_apis;x86_64" --device "pixel"
+          & "C:\Android\cmdline-tools\latest\bin\avdmanager.bat" create avd -n cloudphone -k "system-images;android-30;google_apis;x86_64" --device "pixel" --force
 
       - name: Launch Android Emulator (headless)
         run: |
-          emulator -avd cloudphone -no-snapshot -no-window -no-audio &
+          & "C:\Android\emulator\emulator.exe" -avd cloudphone -no-window -no-audio -no-snapshot &
 
       # ---------------- Enable RDP ----------------
       - name: Enable RDP
@@ -65,6 +56,5 @@ jobs:
       # ---------------- Keep Alive ----------------
       - name: Keep Alive
         run: |
-          echo "Cloud Phone is running..."
+          echo "Cloud Android Phone is running..."
           ping -t 127.0.0.1 > NUL
-
