@@ -49,7 +49,7 @@ jobs:
       # ---------------- Install Android 11 SDK & System Images ----------------
       - name: Install Android 11 SDK
         run: |
-          & "C:\Android\cmdline-tools\latest\bin\sdkmanager.bat" --sdk_root "C:\Android" --install "platform-tools" "platforms;android-30" "system-images;android-30;google_apis;x86_64" "emulator" --verbose
+          & "C:\Android\cmdline-tools\latest\bin\sdkmanager.bat" --sdk_root="C:\Android" --install "platform-tools" "platforms;android-30" "system-images;android-30;google_apis;x86_64" "emulator" --verbose
 
       # ---------------- Create Android 11 AVD ----------------
       - name: Create Android 11 AVD
