@@ -29,12 +29,13 @@ jobs:
         run: |
           curl -L https://dl.google.com/android/repository/commandlinetools-win-9477386_latest.zip -o cmd-tools.zip
           if (!(Test-Path "C:\Android")) { mkdir C:\Android }
-          # Remove previous cmdline-tools folder if exists
           if (Test-Path "C:\Android\cmdline-tools\latest") { Remove-Item -Recurse -Force "C:\Android\cmdline-tools\latest" }
           mkdir C:\Android\cmdline-tools\latest
-          # Extract directly into latest folder to avoid extra nested folder
           Add-Type -AssemblyName System.IO.Compression.FileSystem
           [System.IO.Compression.ZipFile]::ExtractToDirectory("cmd-tools.zip","C:\Android\cmdline-tools\latest")
+          # Move inner folder contents to latest to fix sdkmanager path
+          Move-Item "C:\Android\cmdline-tools\latest\cmdline-tools\*" "C:\Android\cmdline-tools\latest\"
+          Remove-Item "C:\Android\cmdline-tools\latest\cmdline-tools" -Recurse
 
       # ---------------- Set Environment Variables ----------------
       - name: Set ANDROID_HOME and PATH
