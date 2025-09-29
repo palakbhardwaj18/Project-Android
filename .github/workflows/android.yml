@@ -12,6 +12,7 @@ jobs:
       - name: Checkout Repo
         uses: actions/checkout@v3
 
+      # ---------------- Tailscale ----------------
       - name: Install Tailscale
         run: |
           curl -L https://pkgs.tailscale.com/stable/tailscale-setup-latest.exe -o tailscale-installer.exe
@@ -19,17 +20,20 @@ jobs:
           & "C:\Program Files\Tailscale\tailscale.exe" version
           & "C:\Program Files\Tailscale\tailscale.exe" up --authkey ${{ secrets.TS_KEY }} --hostname github-cloudphone --accept-routes --accept-dns
 
-      - name: Install Java (needed for Android SDK tools)
+      # ---------------- Java (required for Android SDK) ----------------
+      - name: Install Java
         run: choco install microsoft-openjdk11 -y
 
+      # ---------------- Android Command Line Tools ----------------
       - name: Download Android Command Line Tools
         run: |
           curl -L https://dl.google.com/android/repository/commandlinetools-win-9477386_latest.zip -o cmd-tools.zip
-          mkdir C:\Android
+          if (!(Test-Path "C:\Android")) { mkdir C:\Android }
           tar -xf cmd-tools.zip -C C:\Android
-          mkdir C:\Android\cmdline-tools\latest
+          if (!(Test-Path "C:\Android\cmdline-tools\latest")) { mkdir C:\Android\cmdline-tools\latest }
           move C:\Android\cmdline-tools\* C:\Android\cmdline-tools\latest
 
+      # ---------------- Set Environment Variables ----------------
       - name: Set ANDROID_HOME and PATH
         run: |
           echo "ANDROID_HOME=C:\Android" >> $env:GITHUB_ENV
@@ -38,7 +42,8 @@ jobs:
           echo "C:\Android\platform-tools" >> $env:GITHUB_PATH
           echo "C:\Android\emulator" >> $env:GITHUB_PATH
 
-      - name: Install Android 11 system image
+      # ---------------- Install Android 11 SDK & Emulator ----------------
+      - name: Install Android 11 system image & tools
         run: |
           echo y | sdkmanager --install "platform-tools" "platforms;android-30" "system-images;android-30;google_apis;x86_64" "emulator"
 
@@ -50,6 +55,7 @@ jobs:
         run: |
           emulator -avd cloudphone -no-snapshot -no-window -no-audio &
 
+      # ---------------- Enable RDP ----------------
       - name: Enable RDP
         run: |
           net user runneradmin MyStrongPassword123! /add
@@ -57,6 +63,7 @@ jobs:
           reg add "HKLM\SYSTEM\CurrentControlSet\Control\Terminal Server" /v fDenyTSConnections /t REG_DWORD /d 0 /f
           Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
 
+      # ---------------- Keep Alive ----------------
       - name: Keep Alive
         run: |
           echo "Cloud Phone is running..."
