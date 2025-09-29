@@ -16,8 +16,8 @@ jobs:
         run: |
           curl -L https://pkgs.tailscale.com/stable/tailscale-setup-latest.exe -o tailscale-installer.exe
           Start-Process ".\tailscale-installer.exe" -ArgumentList "/quiet" -Wait
-          "C:\Program Files\Tailscale\tailscale.exe" version
-          "C:\Program Files\Tailscale\tailscale.exe" up --authkey ${{ secrets.TS_KEY }} --hostname github-cloudphone --accept-routes --accept-dns
+          & "C:\Program Files\Tailscale\tailscale.exe" version
+          & "C:\Program Files\Tailscale\tailscale.exe" up --authkey ${{ secrets.TS_KEY }} --hostname github-cloudphone --accept-routes --accept-dns
 
       - name: Install Chocolatey
         run: |
@@ -32,13 +32,13 @@ jobs:
 
       - name: Setup Android 11 Emulator
         run: |
-          echo "y" | sdkmanager --install "system-images;android-30;google_apis;x86_64"
-          echo "no" | avdmanager create avd -n cloudphone -k "system-images;android-30;google_apis;x86_64"
-          emulator -avd cloudphone -no-snapshot -no-window -no-audio &
+          echo "y" | & "C:\ProgramData\chocolatey\bin\sdkmanager.bat" --install "system-images;android-30;google_apis;x86_64"
+          echo "no" | & "C:\ProgramData\chocolatey\bin\avdmanager.bat" create avd -n cloudphone -k "system-images;android-30;google_apis;x86_64"
+          & "C:\ProgramData\chocolatey\bin\emulator.exe" -avd cloudphone -no-snapshot -no-window -no-audio &
 
       - name: Enable RDP
         run: |
-          net user android devgop /add
+          net user runneradmin MyStrongPassword123! /add
           net localgroup administrators runneradmin /add
           reg add "HKLM\SYSTEM\CurrentControlSet\Control\Terminal Server" /v fDenyTSConnections /t REG_DWORD /d 0 /f
           Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
