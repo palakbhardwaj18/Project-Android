@@ -1,0 +1,47 @@
+name: Cloud Android Phone (Win11 + Tailscale + Android11)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  android-phone:
+    runs-on: windows-latest
+    timeout-minutes: 360   # 6 hours
+
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v3
+
+      - name: Install Chocolatey
+        run: |
+          Set-ExecutionPolicy Bypass -Scope Process -Force
+          [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
+          iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
+
+      - name: Install Tailscale
+        run: |
+          choco install tailscale -y
+          tailscale up --authkey ${{ secrets.TS_KEY }} --hostname github-cloudphone
+
+      - name: Install Android SDK
+        run: |
+          choco install android-sdk -y
+          choco install androidstudio -y
+
+      - name: Setup Android 11 Emulator
+        run: |
+          echo "y" | sdkmanager --install "system-images;android-30;google_apis;x86_64"
+          echo "no" | avdmanager create avd -n cloudphone -k "system-images;android-30;google_apis;x86_64"
+          emulator -avd cloudphone -no-window -no-audio &
+
+      - name: Enable RDP
+        run: |
+          net user runneradmin /add
+          net localgroup administrators runneradmin /add
+          reg add "HKLM\SYSTEM\CurrentControlSet\Control\Terminal Server" /v fDenyTSConnections /t REG_DWORD /d 0 /f
+          Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
+
+      - name: Keep Alive
+        run: |
+          echo "Cloud Phone is running..."
+          ping -t 127.0.0.1 > NUL
