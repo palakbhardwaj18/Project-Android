@@ -6,22 +6,24 @@ on:
 jobs:
   android-phone:
     runs-on: windows-latest
-    timeout-minutes: 360   # 6 hours
+    timeout-minutes: 360   # 6 hours max
 
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v3
+
+      - name: Install Tailscale
+        run: |
+          curl -L https://pkgs.tailscale.com/stable/tailscale-setup-latest.exe -o tailscale-installer.exe
+          Start-Process ".\tailscale-installer.exe" -ArgumentList "/quiet" -Wait
+          "C:\Program Files\Tailscale\tailscale.exe" version
+          "C:\Program Files\Tailscale\tailscale.exe" up --authkey ${{ secrets.TS_KEY }} --hostname github-cloudphone --accept-routes --accept-dns
 
       - name: Install Chocolatey
         run: |
           Set-ExecutionPolicy Bypass -Scope Process -Force
           [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
           iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
-
-      - name: Install Tailscale
-        run: |
-          choco install tailscale -y
-          tailscale up --authkey ${{ secrets.TS_KEY }} --hostname github-cloudphone
 
       - name: Install Android SDK
         run: |
@@ -32,11 +34,11 @@ jobs:
         run: |
           echo "y" | sdkmanager --install "system-images;android-30;google_apis;x86_64"
           echo "no" | avdmanager create avd -n cloudphone -k "system-images;android-30;google_apis;x86_64"
-          emulator -avd cloudphone -no-window -no-audio &
+          emulator -avd cloudphone -no-snapshot -no-window -no-audio &
 
       - name: Enable RDP
         run: |
-          net user runneradmin /add
+          net user android devgop /add
           net localgroup administrators runneradmin /add
           reg add "HKLM\SYSTEM\CurrentControlSet\Control\Terminal Server" /v fDenyTSConnections /t REG_DWORD /d 0 /f
           Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
