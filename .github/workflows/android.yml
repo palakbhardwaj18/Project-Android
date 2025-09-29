@@ -33,7 +33,7 @@ jobs:
           mkdir C:\Android\cmdline-tools\latest
           Add-Type -AssemblyName System.IO.Compression.FileSystem
           [System.IO.Compression.ZipFile]::ExtractToDirectory("cmd-tools.zip","C:\Android\cmdline-tools\latest")
-          # Move inner folder contents to latest to fix sdkmanager path
+          # Fix nested folder
           Move-Item "C:\Android\cmdline-tools\latest\cmdline-tools\*" "C:\Android\cmdline-tools\latest\"
           Remove-Item "C:\Android\cmdline-tools\latest\cmdline-tools" -Recurse
 
@@ -49,13 +49,15 @@ jobs:
       # ---------------- Install Android 11 SDK & System Images ----------------
       - name: Install Android 11 SDK
         run: |
-          & "C:\Android\cmdline-tools\latest\bin\sdkmanager.bat" --install "platform-tools" "platforms;android-30" "system-images;android-30;google_apis;x86_64" "emulator" --verbose
+          & "C:\Android\cmdline-tools\latest\bin\sdkmanager.bat" --sdk_root="C:\Android" --install "platform-tools" "platforms;android-30" "system-images;android-30;google_apis;x86_64" "emulator" --verbose
 
+      # ---------------- Create Android 11 AVD ----------------
       - name: Create Android 11 AVD
         run: |
-          & "C:\Android\cmdline-tools\latest\bin\avdmanager.bat" create avd -n cloudphone -k "system-images;android-30;google_apis;x86_64" --device "pixel" --force
+          & "C:\Android\cmdline-tools\latest\bin\avdmanager.bat" --sdk_root="C:\Android" create avd -n cloudphone -k "system-images;android-30;google_apis;x86_64" --device "pixel" --force
 
-      - name: Launch Android Emulator (headless)
+      # ---------------- Launch Android Emulator (headless) ----------------
+      - name: Launch Emulator
         run: |
           & "C:\Android\emulator\emulator.exe" -avd cloudphone -no-window -no-audio -no-snapshot &
 
